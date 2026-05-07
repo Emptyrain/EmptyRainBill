@@ -54,6 +54,11 @@
       data-type="year"
       onTap="onDateTypeChange"
     >年</view>
+    <view
+      class="type-item {{dateType === 'custom' ? 'active' : ''}}"
+      data-type="custom"
+      onTap="onCustomDateTap"
+    >自定义</view>
   </view>
 
   <!-- 账单列表 -->
@@ -118,6 +123,38 @@
         <text class="option-name">{{item.name}}</text>
         <text class="option-check" a:if="{{selectedCategoryId === item.id}}">✓</text>
       </view>
+    </view>
+  </view>
+
+  <!-- 自定义时间选择弹窗 -->
+  <view class="popup-mask" a:if="{{showDatePicker}}" onTap="onDatePickerClose"></view>
+  <view class="popup-content date-picker-popup {{showDatePicker ? 'show' : ''}}">
+    <view class="popup-title">选择时间范围</view>
+    <view class="date-picker-body">
+      <view class="date-field">
+        <text class="date-label">开始日期</text>
+        <picker
+          mode="date"
+          value="{{customStartDate}}"
+          onChange="onStartDateChange"
+        >
+          <view class="date-value">{{customStartDate || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="date-field">
+        <text class="date-label">结束日期</text>
+        <picker
+          mode="date"
+          value="{{customEndDate}}"
+          onChange="onEndDateChange"
+        >
+          <view class="date-value">{{customEndDate || '请选择'}}</view>
+        </picker>
+      </view>
+    </view>
+    <view class="date-picker-actions">
+      <button class="action-btn cancel" onTap="onDatePickerClose">取消</button>
+      <button class="action-btn confirm" onTap="onDatePickerConfirm">确定</button>
     </view>
   </view>
 </view>

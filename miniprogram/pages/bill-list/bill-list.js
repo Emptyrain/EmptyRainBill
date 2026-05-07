@@ -10,6 +10,11 @@ Page({
     endDate: '',
     dateRangeText: '',
 
+    // 自定义时间选择
+    showDatePicker: false,
+    customStartDate: '',
+    customEndDate: '',
+
     // 分类筛选
     categories: [],
     selectedCategoryId: '',
@@ -46,7 +51,7 @@ Page({
   },
 
   async initData() {
-    const categories = await storage.getCategories();
+    const categories = await storage.getValidCategories();
     const today = util.getToday();
     const monthStart = util.getMonthStart();
 
@@ -55,6 +60,8 @@ Page({
       currentDate: today,
       startDate: monthStart,
       endDate: today,
+      customStartDate: monthStart,
+      customEndDate: today,
       dateRangeText: util.getMonthName(today)
     });
 
@@ -80,7 +87,7 @@ Page({
     ]);
 
     // 获取分类信息用于显示
-    const categories = await storage.getCategories();
+    const categories = await storage.getValidCategories();
     const categoryMap = {};
     categories.forEach(c => {
       categoryMap[c.id] = c;
@@ -130,12 +137,28 @@ Page({
   // 时间类型切换
   onDateTypeChange(e) {
     const type = e.currentTarget.dataset.type;
-    this.setData({ dateType: type });
+    const today = util.getToday();
 
-    const range = util.getDateRange(type);
+    let startDate, endDate;
+    switch (type) {
+      case 'day':
+        startDate = endDate = today;
+        break;
+      case 'month':
+        startDate = util.getMonthStart();
+        endDate = today;
+        break;
+      case 'year':
+        startDate = util.getYearStart();
+        endDate = today;
+        break;
+    }
+
     this.setData({
-      startDate: range.start,
-      endDate: range.end
+      dateType: type,
+      currentDate: today,
+      startDate,
+      endDate
     });
 
     this.updateDateRangeText(type);
@@ -144,48 +167,100 @@ Page({
 
   updateDateRangeText(type) {
     let text = '';
+    const { startDate, endDate } = this.data;
+
     switch (type) {
       case 'day':
-        text = this.data.currentDate;
+        text = startDate;
         break;
       case 'month':
-        text = util.getMonthName(this.data.currentDate);
+        text = util.getMonthName(startDate);
         break;
       case 'year':
-        text = new Date(this.data.currentDate).getFullYear() + '年';
+        text = new Date(startDate).getFullYear() + '年';
+        break;
+      case 'custom':
+        text = `${startDate} 至 ${endDate}`;
         break;
     }
     this.setData({ dateRangeText: text });
   },
 
-  // 时间导航
-  onDateNavigate(e) {
-    const direction = e.currentTarget.dataset.direction;
-    const { dateType, currentDate, startDate, endDate } = this.data;
+  // 自定义时间选择
+  onCustomDateTap() {
+    const { startDate, endDate } = this.data;
+    this.setData({
+      showDatePicker: true,
+      customStartDate: startDate,
+      customEndDate: endDate
+    });
+  },
 
-    if (dateType === 'custom') {
-      // 自定义范围不支持导航
+  onStartDateChange(e) {
+    this.setData({ customStartDate: e.detail.value });
+  },
+
+  onEndDateChange(e) {
+    this.setData({ customEndDate: e.detail.value });
+  },
+
+  onDatePickerClose() {
+    this.setData({ showDatePicker: false });
+  },
+
+  onDatePickerConfirm() {
+    const { customStartDate, customEndDate } = this.data;
+
+    if (!customStartDate || !customEndDate) {
+      my.showToast({ content: '请选择完整的时间范围', type: 'none' });
       return;
     }
 
-    const newDate = util.navigateDate(dateType, currentDate, direction);
-    const range = util.getDateRange(dateType, { start: newDate, end: newDate });
+    if (customStartDate > customEndDate) {
+      my.showToast({ content: '开始日期不能晚于结束日期', type: 'none' });
+      return;
+    }
 
-    // 根据类型计算新的范围
-    let newStart, newEnd;
-    const d = new Date(newDate);
+    this.setData({
+      dateType: 'custom',
+      startDate: customStartDate,
+      endDate: customEndDate,
+      showDatePicker: false
+    });
+
+    this.updateDateRangeText('custom');
+    this.loadData();
+  },
+
+  // 时间导航
+  onDateNavigate(e) {
+    const direction = parseInt(e.currentTarget.dataset.direction);
+    const { dateType, currentDate, startDate, endDate } = this.data;
+
+    if (dateType === 'custom') {
+      return;
+    }
+
+    const d = new Date(currentDate);
+    let newDate, newStart, newEnd;
 
     switch (dateType) {
       case 'day':
+        d.setDate(d.getDate() + direction);
+        newDate = util.formatDate(d);
         newStart = newEnd = newDate;
         break;
       case 'month':
+        d.setMonth(d.getMonth() + direction);
         d.setDate(1);
+        newDate = util.formatDate(d);
         newStart = util.formatDate(d);
         newEnd = util.formatDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
         break;
       case 'year':
+        d.setFullYear(d.getFullYear() + direction);
         d.setMonth(0, 1);
+        newDate = util.formatDate(d);
         newStart = util.formatDate(d);
         newEnd = util.formatDate(new Date(d.getFullYear(), 11, 31));
         break;

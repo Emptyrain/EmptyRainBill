@@ -51,26 +51,38 @@ function callFunction(name, data = {}) {
 }
 
 /**
- * 上传数据到云端
+ * 上传数据到云端（只上传待同步的数据）
  */
 async function uploadToCloud(userId) {
-  const bills = await storage.getBills();
-  const categories = await storage.getCategories();
+  // 获取待同步的数据
+  const pendingData = await storage.getPendingSyncData();
+
+  // 如果没有待同步数据，直接返回
+  if (pendingData.bills.length === 0 && pendingData.categories.length === 0) {
+    return { success: true, message: '没有待同步的数据' };
+  }
 
   const result = await callFunction('sync', {
     action: 'upload',
     userId,
-    data: {
-      bills,
-      categories
-    }
+    data: pendingData
   });
 
   if (result.success) {
+    // 标记已同步的数据
+    const billIds = pendingData.bills.map(b => b.id);
+    const categoryIds = pendingData.categories.map(c => c.id);
+
+    await storage.markAsSynced('bill', billIds);
+    await storage.markAsSynced('category', categoryIds);
     await storage.updateSyncTime();
   }
 
-  return result;
+  return {
+    ...result,
+    uploadedBills: pendingData.bills.length,
+    uploadedCategories: pendingData.categories.length
+  };
 }
 
 /**
@@ -112,6 +124,7 @@ async function mergeCloudData(cloudData) {
 
 /**
  * 合并两个数组（按updatedAt判断更新）
+ * 云端数据默认标记为已同步
  */
 function mergeArray(localArr, cloudArr, keyField) {
   const map = new Map();
@@ -124,8 +137,11 @@ function mergeArray(localArr, cloudArr, keyField) {
   // 合并云端数据
   cloudArr.forEach(item => {
     const existing = map.get(item[keyField]);
+    // 云端数据标记为已同步
+    const cloudItem = { ...item, syncStatus: storage.SYNC_STATUS.SYNCED };
+
     if (!existing || item.updatedAt > existing.updatedAt) {
-      map.set(item[keyField], item);
+      map.set(item[keyField], cloudItem);
     }
   });
 

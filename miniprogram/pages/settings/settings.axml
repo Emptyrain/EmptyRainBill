@@ -12,6 +12,22 @@
     </view>
   </view>
 
+  <!-- 云同步 -->
+  <view class="section">
+    <view class="section-title">云同步</view>
+    <view class="sync-buttons">
+      <button class="sync-btn upload" onTap="onUpload">
+        上传数据
+        <text class="sync-badge" a:if="{{pendingBillCount > 0 || pendingCategoryCount > 0}}">{{pendingBillCount + pendingCategoryCount}}</text>
+      </button>
+      <button class="sync-btn download" onTap="onDownload">拉取数据</button>
+    </view>
+    <view class="sync-info">
+      <text>上次同步：{{lastSyncTime}}</text>
+      <text a:if="{{pendingBillCount > 0 || pendingCategoryCount > 0}}">待同步：{{pendingBillCount}}条账单，{{pendingCategoryCount}}个分类</text>
+    </view>
+  </view>
+
   <!-- 数据管理 -->
   <view class="section">
     <view class="section-title">数据管理</view>

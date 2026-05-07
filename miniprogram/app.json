@@ -30,6 +30,10 @@
       {
         "pagePath": "pages/category/category",
         "name": "分类"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "name": "设置"
       }
     ]
   }

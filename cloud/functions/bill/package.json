@@ -1,0 +1,7 @@
+{
+  "name": "bill",
+  "version": "1.0.0",
+  "description": "账单操作云函数",
+  "main": "index.js",
+  "dependencies": {}
+}

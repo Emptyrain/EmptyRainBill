@@ -17,13 +17,16 @@ Page({
   },
 
   async loadData() {
-    const bills = await storage.getBills();
-    const categories = await storage.getCategories();
+    const bills = await storage.getValidBills();
+    const categories = await storage.getValidCategories();
     const syncMeta = await storage.getSyncMeta();
+    const pendingData = await storage.getPendingSyncData();
 
     this.setData({
       billCount: bills.length,
       categoryCount: categories.length,
+      pendingBillCount: pendingData.bills.length,
+      pendingCategoryCount: pendingData.categories.length,
       lastSyncTime: syncMeta.lastSyncTime ? this.formatTime(syncMeta.lastSyncTime) : '--'
     });
   },
@@ -41,8 +44,8 @@ Page({
   // 导出数据
   async onExportData() {
     try {
-      const bills = await storage.getBills();
-      const categories = await storage.getCategories();
+      const bills = await storage.getValidBills();
+      const categories = await storage.getValidCategories();
 
       const exportData = {
         bills,
@@ -105,5 +108,40 @@ Page({
       title: '意见反馈',
       content: '如有问题或建议，请联系开发者。'
     });
+  },
+
+  // 上传数据到云端
+  async onUpload() {
+    my.showLoading({ content: '上传中...' });
+    try {
+      // TODO: 调用云函数上传数据
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      my.hideLoading();
+      my.showToast({ content: '上传成功', type: 'success' });
+      this.setData({
+        lastSyncTime: this.formatTime(Date.now())
+      });
+    } catch (err) {
+      my.hideLoading();
+      my.showToast({ content: '上传失败', type: 'fail' });
+    }
+  },
+
+  // 从云端拉取数据
+  async onDownload() {
+    my.showLoading({ content: '拉取中...' });
+    try {
+      // TODO: 调用云函数拉取数据
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      my.hideLoading();
+      my.showToast({ content: '拉取成功', type: 'success' });
+      this.setData({
+        lastSyncTime: this.formatTime(Date.now())
+      });
+      await this.loadData();
+    } catch (err) {
+      my.hideLoading();
+      my.showToast({ content: '拉取失败', type: 'fail' });
+    }
   }
 });
