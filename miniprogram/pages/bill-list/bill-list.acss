@@ -197,6 +197,10 @@
   border-bottom: none;
 }
 
+.bill-item.installment {
+  background-color: #FAFAFA;
+}
+
 .bill-icon {
   width: 80rpx;
   height: 80rpx;
@@ -217,11 +221,26 @@
   font-size: 30rpx;
   color: #333333;
   margin-bottom: 4rpx;
+  display: flex;
+  align-items: center;
+}
+
+.installment-tag {
+  font-size: 20rpx;
+  color: #1677FF;
+  background-color: #E8F4FF;
+  padding: 2rpx 8rpx;
+  border-radius: 4rpx;
+  margin-left: 8rpx;
 }
 
 .bill-note {
   font-size: 24rpx;
   color: #999999;
+}
+
+.bill-amount-wrap {
+  text-align: right;
 }
 
 .bill-amount {
@@ -235,6 +254,12 @@
 
 .bill-amount.income {
   color: #52C41A;
+}
+
+.bill-original {
+  font-size: 22rpx;
+  color: #999999;
+  margin-top: 4rpx;
 }
 
 /* 空状态 */

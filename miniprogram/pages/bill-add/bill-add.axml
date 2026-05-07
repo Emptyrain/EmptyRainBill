@@ -76,6 +76,77 @@
     </view>
   </view>
 
+  <!-- 分摊设置 -->
+  <view class="installment-section card">
+    <view class="installment-header" onTap="onInstallmentToggle">
+      <view class="installment-title">
+        <text class="title-text">分摊设置</text>
+        <text class="title-desc">将金额分摊到多个时间段</text>
+      </view>
+      <view class="installment-switch {{enableInstallment ? 'active' : ''}}">
+        <view class="switch-dot"></view>
+      </view>
+    </view>
+
+    <view class="installment-content" a:if="{{enableInstallment}}">
+      <!-- 分摊类型 -->
+      <view class="installment-type">
+        <view
+          class="type-item {{installmentType === 'month' ? 'active' : ''}}"
+          data-type="month"
+          onTap="onInstallmentTypeChange"
+        >
+          按月分摊
+        </view>
+        <view
+          class="type-item {{installmentType === 'day' ? 'active' : ''}}"
+          data-type="day"
+          onTap="onInstallmentTypeChange"
+        >
+          按日分摊
+        </view>
+      </view>
+
+      <!-- 分摊时间范围 -->
+      <view class="installment-range">
+        <view class="range-row">
+          <text class="range-label">开始</text>
+          <picker
+            mode="date"
+            value="{{installmentStartDate}}"
+            onChange="onInstallmentStartChange"
+          >
+            <view class="range-value">{{installmentStartDate || '选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="range-row">
+          <text class="range-label">结束</text>
+          <picker
+            mode="date"
+            value="{{installmentEndDate}}"
+            onChange="onInstallmentEndChange"
+          >
+            <view class="range-value">{{installmentEndDate || '选择日期'}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <!-- 分摊结果预览 -->
+      <view class="installment-preview" a:if="{{installmentCount > 0}}">
+        <view class="preview-item">
+          <text class="preview-label">分摊期数</text>
+          <text class="preview-value">{{installmentCount}}期</text>
+        </view>
+        <view class="preview-item">
+          <text class="preview-label">每期金额</text>
+          <text class="preview-value highlight">¥{{installmentAmountPer}}</text>
+        </view>
+      </view>
+
+      <text class="error-text" a:if="{{errors.installment}}">{{errors.installment}}</text>
+    </view>
+  </view>
+
   <!-- 操作按钮 -->
   <view class="button-section">
     <button class="btn-save" onTap="onSave">

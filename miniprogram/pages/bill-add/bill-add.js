@@ -12,8 +12,14 @@ Page({
     isEdit: false,
     editBillId: null,
     maxDate: '',
-    // 数字键盘相关
-    showKeyboard: false,
+    // 分摊相关
+    enableInstallment: false,
+    installmentType: 'month', // month | day
+    installmentStartDate: '',
+    installmentEndDate: '',
+    installmentCount: 0,
+    installmentAmountPer: 0,
+    showInstallmentPicker: false,
     // 表单验证
     errors: {}
   },
@@ -26,22 +32,46 @@ Page({
     if (options.id) {
       const bill = await storage.getBillById(options.id);
       if (bill) {
-        this.setData({
-          isEdit: true,
-          editBillId: options.id,
-          type: bill.type,
-          amount: util.fenToYuan(bill.amount),
-          date: bill.date,
-          note: bill.note || '',
-          selectedCategoryId: bill.categoryId
-        });
+        // 如果是分摊子账单，需要加载父账单信息
+        if (bill.isInstallmentChild && bill.installmentParentId) {
+          const parentBill = await storage.getBillById(bill.installmentParentId);
+          if (parentBill) {
+            this.setData({
+              isEdit: true,
+              editBillId: parentBill.id,
+              type: parentBill.type,
+              amount: util.fenToYuan(parentBill.amount),
+              date: parentBill.date,
+              note: parentBill.note || '',
+              selectedCategoryId: parentBill.categoryId,
+              enableInstallment: true,
+              installmentType: parentBill.installmentType,
+              installmentStartDate: parentBill.installmentRange.start,
+              installmentEndDate: parentBill.installmentRange.end,
+              installmentCount: parentBill.installmentCount,
+              installmentAmountPer: util.fenToYuan(Math.floor(parentBill.amount / parentBill.installmentCount))
+            });
+          }
+        } else {
+          this.setData({
+            isEdit: true,
+            editBillId: options.id,
+            type: bill.type,
+            amount: util.fenToYuan(bill.amount),
+            date: bill.date,
+            note: bill.note || '',
+            selectedCategoryId: bill.categoryId
+          });
+        }
         my.setNavigationBar({ title: '编辑账单' });
       }
     } else {
       // 新增模式，默认今天
       this.setData({
         date: today,
-        maxDate
+        maxDate,
+        installmentStartDate: today,
+        installmentEndDate: today
       });
     }
 
@@ -82,6 +112,7 @@ Page({
       amount: value,
       'errors.amount': ''
     });
+    this.calculateInstallment();
   },
 
   // 选择分类
@@ -107,6 +138,80 @@ Page({
     });
   },
 
+  // 开启/关闭分摊
+  onInstallmentToggle() {
+    const enableInstallment = !this.data.enableInstallment;
+    this.setData({ enableInstallment });
+    if (enableInstallment) {
+      this.calculateInstallment();
+    }
+  },
+
+  // 分摊类型切换
+  onInstallmentTypeChange(e) {
+    const type = e.currentTarget.dataset.type;
+    this.setData({ installmentType: type });
+    this.calculateInstallment();
+  },
+
+  // 分摊开始日期
+  onInstallmentStartChange(e) {
+    this.setData({ installmentStartDate: e.detail.value });
+    this.calculateInstallment();
+  },
+
+  // 分摊结束日期
+  onInstallmentEndChange(e) {
+    this.setData({ installmentEndDate: e.detail.value });
+    this.calculateInstallment();
+  },
+
+  // 计算分摊
+  calculateInstallment() {
+    const { amount, installmentType, installmentStartDate, installmentEndDate } = this.data;
+    const amountNum = parseFloat(amount);
+
+    if (!amountNum || amountNum <= 0 || !installmentStartDate || !installmentEndDate) {
+      this.setData({
+        installmentCount: 0,
+        installmentAmountPer: 0
+      });
+      return;
+    }
+
+    const startDate = new Date(installmentStartDate);
+    const endDate = new Date(installmentEndDate);
+
+    if (startDate > endDate) {
+      this.setData({
+        installmentCount: 0,
+        installmentAmountPer: 0
+      });
+      return;
+    }
+
+    let count = 0;
+    if (installmentType === 'month') {
+      // 计算月数
+      const months = (endDate.getFullYear() - startDate.getFullYear()) * 12
+        + (endDate.getMonth() - startDate.getMonth()) + 1;
+      count = months;
+    } else if (installmentType === 'day') {
+      // 计算天数
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      count = diffDays;
+    }
+
+    const amountInFen = util.yuanToFen(amount);
+    const amountPer = Math.floor(amountInFen / count);
+
+    this.setData({
+      installmentCount: count,
+      installmentAmountPer: util.fenToYuan(amountPer)
+    });
+  },
+
   // 表单验证
   validateForm() {
     const errors = {};
@@ -123,6 +228,22 @@ Page({
     if (!this.data.selectedCategoryId) {
       errors.category = '请选择分类';
       isValid = false;
+    }
+
+    // 分摊验证
+    if (this.data.enableInstallment) {
+      if (!this.data.installmentStartDate || !this.data.installmentEndDate) {
+        errors.installment = '请选择分摊时间范围';
+        isValid = false;
+      }
+      if (this.data.installmentStartDate > this.data.installmentEndDate) {
+        errors.installment = '开始日期不能晚于结束日期';
+        isValid = false;
+      }
+      if (this.data.installmentCount <= 0) {
+        errors.installment = '分摊数量无效';
+        isValid = false;
+      }
     }
 
     this.setData({ errors });
@@ -147,21 +268,71 @@ Page({
       };
 
       if (this.data.isEdit) {
-        await storage.updateBill(this.data.editBillId, billData);
+        // 编辑模式：需要判断当前编辑的是哪种账单
+        const currentBill = await storage.getBillById(this.data.editBillId);
+
+        if (this.data.enableInstallment) {
+          // 开启分摊
+          if (currentBill && currentBill.isInstallment) {
+            // 原来就是分摊账单，更新分摊配置
+            billData.installmentType = this.data.installmentType;
+            billData.installmentRange = {
+              start: this.data.installmentStartDate,
+              end: this.data.installmentEndDate
+            };
+            await storage.updateInstallmentBills(this.data.editBillId, billData);
+          } else {
+            // 原来是普通账单，转为分摊账单
+            // 先删除原账单
+            await storage.deleteBill(this.data.editBillId);
+            // 再创建分摊账单
+            await storage.addInstallmentBills(billData, {
+              type: this.data.installmentType,
+              startDate: this.data.installmentStartDate,
+              endDate: this.data.installmentEndDate,
+              count: this.data.installmentCount
+            });
+          }
+        } else {
+          // 未开启分摊
+          if (currentBill && currentBill.isInstallment) {
+            // 原来是分摊账单，取消分摊，创建普通账单
+            await storage.cancelInstallment(this.data.editBillId);
+            await storage.addBill(billData);
+          } else {
+            // 原来就是普通账单，直接更新
+            await storage.updateBill(this.data.editBillId, billData);
+          }
+        }
         my.hideLoading();
         my.showToast({ content: '修改成功', type: 'success' });
         setTimeout(() => {
           my.navigateBack();
         }, 1500);
       } else {
-        await storage.addBill(billData);
+        // 新增模式
+        if (this.data.enableInstallment) {
+          // 创建分摊账单
+          await storage.addInstallmentBills(billData, {
+            type: this.data.installmentType,
+            startDate: this.data.installmentStartDate,
+            endDate: this.data.installmentEndDate,
+            count: this.data.installmentCount
+          });
+        } else {
+          await storage.addBill(billData);
+        }
         my.hideLoading();
         my.showToast({ content: '保存成功', type: 'success' });
         // 清空表单继续记账
+        const today = util.getToday();
         this.setData({
           amount: '',
           note: '',
-          date: util.getToday()
+          date: today,
+          enableInstallment: false,
+          installmentCount: 0,
+          installmentAmountPer: 0
         });
       }
     } catch (err) {
@@ -177,7 +348,7 @@ Page({
 
     my.confirm({
       title: '确认删除',
-      content: '确定要删除这条账单吗？',
+      content: this.data.enableInstallment ? '删除将取消整个分摊，所有分摊明细都会被删除，确定要删除吗？' : '确定要删除这条账单吗？',
       success: async (res) => {
         if (res.confirm) {
           my.showLoading({ content: '删除中...' });

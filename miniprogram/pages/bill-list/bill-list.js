@@ -100,6 +100,11 @@ Page({
         bill.categoryName = cat ? cat.name : '未知';
         bill.categoryIcon = cat ? cat.icon : '❓';
         bill.amountText = util.formatAmountWithSign(bill.amount, bill.type);
+        // 分摊账单额外显示原金额
+        if (bill.isInstallmentChild) {
+          bill.originalAmountText = util.fenToYuan(bill.originalAmount);
+          bill.installmentText = `${bill.installmentIndex}/${bill.installmentTotal}`;
+        }
       });
       // 计算每日收支
       group.dayExpense = group.bills

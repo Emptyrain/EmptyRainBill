@@ -76,7 +76,7 @@
       </view>
       <view class="bill-items">
         <view
-          class="bill-item"
+          class="bill-item {{item.isInstallmentChild ? 'installment' : ''}}"
           a:for="{{item.bills}}"
           a:key="id"
           data-bill="{{item}}"
@@ -84,11 +84,17 @@
         >
           <view class="bill-icon">{{item.categoryIcon}}</view>
           <view class="bill-info">
-            <view class="bill-name">{{item.categoryName}}</view>
+            <view class="bill-name">
+              {{item.categoryName}}
+              <text class="installment-tag" a:if="{{item.isInstallmentChild}}">{{item.installmentText}}</text>
+            </view>
             <view class="bill-note" a:if="{{item.note}}">{{item.note}}</view>
           </view>
-          <view class="bill-amount {{item.type}}">
-            {{item.amountText}}
+          <view class="bill-amount-wrap">
+            <view class="bill-amount {{item.type}}">{{item.amountText}}</view>
+            <view class="bill-original" a:if="{{item.isInstallmentChild}}">
+              原金额: ¥{{item.originalAmountText}}
+            </view>
           </view>
         </view>
       </view>

@@ -208,10 +208,11 @@ async function getBills() {
 
 /**
  * 获取有效账单（过滤已删除的，用于显示）
+ * 注意：分摊父账单不直接显示，只显示分摊子账单
  */
 async function getValidBills() {
   const bills = await getBills();
-  return bills.filter(b => b.syncStatus !== SYNC_STATUS.DELETED);
+  return bills.filter(b => b.syncStatus !== SYNC_STATUS.DELETED && !b.isInstallment);
 }
 
 /**
@@ -220,6 +221,14 @@ async function getValidBills() {
 async function getBillById(id) {
   const bills = await getBills();
   return bills.find(b => b.id === id);
+}
+
+/**
+ * 根据ID获取分摊父账单
+ */
+async function getInstallmentParentById(id) {
+  const bills = await getBills();
+  return bills.find(b => b.id === id && b.isInstallment);
 }
 
 /**
@@ -248,10 +257,283 @@ async function addBill(bill) {
 }
 
 /**
+ * 添加分摊账单
+ * 创建一条原始账单和若干条分摊子账单
+ */
+async function addInstallmentBills(billData, installmentConfig) {
+  const bills = await getBills();
+  const now = Date.now();
+  const parentId = generateBillId();
+
+  const { type, rangeType, startDate, endDate, count } = installmentConfig;
+  const originalAmount = billData.amount;
+
+  // 生成分摊日期列表
+  const installmentDates = generateInstallmentDates(type, startDate, endDate, count);
+
+  // 计算每期金额（分）
+  const amountPerInstallment = Math.floor(originalAmount / installmentDates.length);
+  const remainder = originalAmount - amountPerInstallment * installmentDates.length;
+
+  // 创建原始账单（作为父账单，不直接显示在列表中）
+  const parentBill = {
+    ...billData,
+    id: parentId,
+    amount: originalAmount,
+    isInstallment: true,
+    installmentType: type,
+    installmentRange: { start: startDate, end: endDate },
+    installmentCount: installmentDates.length,
+    installmentChildren: [],
+    syncStatus: SYNC_STATUS.PENDING,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  // 创建分摊子账单
+  const childBills = installmentDates.map((date, index) => {
+    const childId = generateBillId();
+    // 最后一期处理余数
+    const childAmount = index === installmentDates.length - 1
+      ? amountPerInstallment + remainder
+      : amountPerInstallment;
+
+    return {
+      ...billData,
+      id: childId,
+      date: date,
+      amount: childAmount,
+      originalAmount: originalAmount,
+      isInstallmentChild: true,
+      installmentParentId: parentId,
+      installmentIndex: index + 1,
+      installmentTotal: installmentDates.length,
+      syncStatus: SYNC_STATUS.PENDING,
+      createdAt: now,
+      updatedAt: now
+    };
+  });
+
+  // 更新父账单的子账单ID列表
+  parentBill.installmentChildren = childBills.map(b => b.id);
+
+  // 保存所有账单
+  bills.push(parentBill, ...childBills);
+  await saveBills(bills);
+
+  return { parentBill, childBills };
+}
+
+/**
+ * 生成分摊日期列表
+ */
+function generateInstallmentDates(type, startDate, endDate, count) {
+  const dates = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (type === 'month') {
+    // 按月分摊
+    const current = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (current <= end) {
+      dates.push(formatDateToYMD(current));
+      current.setMonth(current.getMonth() + 1);
+    }
+  } else if (type === 'day') {
+    // 按天分摊
+    const current = new Date(start);
+    while (current <= end) {
+      dates.push(formatDateToYMD(current));
+      current.setDate(current.getDate() + 1);
+    }
+  }
+
+  return dates;
+}
+
+/**
+ * 格式化日期为 YYYY-MM-DD
+ */
+function formatDateToYMD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * 取消分摊
+ * 删除父账单和所有子账单
+ */
+async function cancelInstallment(parentId) {
+  const bills = await getBills();
+  const parentBill = bills.find(b => b.id === parentId);
+
+  if (!parentBill || !parentBill.isInstallment) {
+    return false;
+  }
+
+  // 获取所有子账单ID
+  const childIds = parentBill.installmentChildren || [];
+
+  // 过滤掉父账单和所有子账单
+  const filteredBills = bills.filter(b =>
+    b.id !== parentId && !childIds.includes(b.id)
+  );
+
+  await saveBills(filteredBills);
+  return true;
+}
+
+/**
+ * 更新分摊账单
+ * 当父账单修改时，同步更新所有子账单
+ * 如果时间范围改变，需要重新生成分摊
+ */
+async function updateInstallmentBills(parentId, updates) {
+  const bills = await getBills();
+  const parentBill = bills.find(b => b.id === parentId);
+
+  if (!parentBill || !parentBill.isInstallment) {
+    return false;
+  }
+
+  const now = Date.now();
+  const childIds = parentBill.installmentChildren || [];
+
+  // 检查是否需要重新生成分摊（时间范围或分摊类型改变）
+  const needRegenerate = updates.installmentType !== undefined ||
+    updates.installmentRange !== undefined;
+
+  if (needRegenerate) {
+    // 删除旧的子账单
+    const filteredBills = bills.filter(b =>
+      b.id !== parentId && !childIds.includes(b.id)
+    );
+
+    // 获取新的分摊配置
+    const newType = updates.installmentType || parentBill.installmentType;
+    const newRange = updates.installmentRange || parentBill.installmentRange;
+    const newAmount = updates.amount !== undefined ? updates.amount : parentBill.amount;
+
+    // 生成新的分摊日期
+    const installmentDates = generateInstallmentDates(newType, newRange.start, newRange.end, 0);
+    const amountPerInstallment = Math.floor(newAmount / installmentDates.length);
+    const remainder = newAmount - amountPerInstallment * installmentDates.length;
+
+    // 创建新的子账单
+    const newChildBills = installmentDates.map((date, index) => {
+      const childId = generateBillId();
+      const childAmount = index === installmentDates.length - 1
+        ? amountPerInstallment + remainder
+        : amountPerInstallment;
+
+      return {
+        type: updates.type !== undefined ? updates.type : parentBill.type,
+        categoryId: updates.categoryId !== undefined ? updates.categoryId : parentBill.categoryId,
+        note: updates.note !== undefined ? updates.note : parentBill.note,
+        id: childId,
+        date: date,
+        amount: childAmount,
+        originalAmount: newAmount,
+        isInstallmentChild: true,
+        installmentParentId: parentId,
+        installmentIndex: index + 1,
+        installmentTotal: installmentDates.length,
+        syncStatus: SYNC_STATUS.PENDING,
+        createdAt: now,
+        updatedAt: now
+      };
+    });
+
+    // 更新父账单
+    const newParentBill = {
+      ...parentBill,
+      ...updates,
+      amount: newAmount,
+      installmentType: newType,
+      installmentRange: newRange,
+      installmentCount: installmentDates.length,
+      installmentChildren: newChildBills.map(b => b.id),
+      syncStatus: parentBill.syncStatus === SYNC_STATUS.SYNCED ? SYNC_STATUS.MODIFIED : parentBill.syncStatus,
+      updatedAt: now
+    };
+
+    filteredBills.push(newParentBill, ...newChildBills);
+    await saveBills(filteredBills);
+    return true;
+  }
+
+  // 普通更新（金额或其他字段改变）
+  // 如果金额改变了，需要重新计算分摊
+  if (updates.amount !== undefined && updates.amount !== parentBill.amount) {
+    const newAmount = updates.amount;
+    const childBills = bills.filter(b => childIds.includes(b.id));
+
+    // 重新计算分摊金额
+    const amountPerInstallment = Math.floor(newAmount / childBills.length);
+    const remainder = newAmount - amountPerInstallment * childBills.length;
+
+    childBills.forEach((bill, index) => {
+      bill.amount = index === childBills.length - 1
+        ? amountPerInstallment + remainder
+        : amountPerInstallment;
+      bill.originalAmount = newAmount;
+      bill.syncStatus = bill.syncStatus === SYNC_STATUS.SYNCED ? SYNC_STATUS.MODIFIED : bill.syncStatus;
+      bill.updatedAt = now;
+    });
+  }
+
+  // 更新父账单
+  const parentIndex = bills.findIndex(b => b.id === parentId);
+  if (parentIndex !== -1) {
+    bills[parentIndex] = {
+      ...bills[parentIndex],
+      ...updates,
+      syncStatus: bills[parentIndex].syncStatus === SYNC_STATUS.SYNCED ? SYNC_STATUS.MODIFIED : bills[parentIndex].syncStatus,
+      updatedAt: now
+    };
+  }
+
+  // 更新子账单的其他属性（非金额）
+  const updateFields = ['categoryId', 'note', 'type'];
+  updateFields.forEach(field => {
+    if (updates[field] !== undefined) {
+      childIds.forEach(childId => {
+        const childIndex = bills.findIndex(b => b.id === childId);
+        if (childIndex !== -1) {
+          bills[childIndex][field] = updates[field];
+          bills[childIndex].syncStatus = bills[childIndex].syncStatus === SYNC_STATUS.SYNCED ? SYNC_STATUS.MODIFIED : bills[childIndex].syncStatus;
+          bills[childIndex].updatedAt = now;
+        }
+      });
+    }
+  });
+
+  await saveBills(bills);
+  return true;
+}
+
+/**
  * 更新账单
  */
 async function updateBill(id, updates) {
   const bills = await getBills();
+  const bill = bills.find(b => b.id === id);
+
+  if (!bill) return false;
+
+  // 如果是分摊子账单，应该更新父账单并同步所有子账单
+  if (bill.isInstallmentChild && bill.installmentParentId) {
+    return updateInstallmentBills(bill.installmentParentId, updates);
+  }
+
+  // 如果是分摊父账单，更新并同步子账单
+  if (bill.isInstallment) {
+    return updateInstallmentBills(id, updates);
+  }
+
+  // 普通账单更新
   const index = bills.findIndex(b => b.id === id);
   if (index !== -1) {
     const oldStatus = bills[index].syncStatus;
@@ -274,6 +556,16 @@ async function deleteBill(id) {
   const bill = bills.find(b => b.id === id);
 
   if (!bill) return false;
+
+  // 如果是分摊子账单，应该取消整个分摊
+  if (bill.isInstallmentChild && bill.installmentParentId) {
+    return cancelInstallment(bill.installmentParentId);
+  }
+
+  // 如果是分摊父账单，取消整个分摊
+  if (bill.isInstallment) {
+    return cancelInstallment(id);
+  }
 
   if (bill.syncStatus === SYNC_STATUS.PENDING) {
     // 本地新增未同步的，直接删除
@@ -544,8 +836,12 @@ module.exports = {
   getBills,
   getValidBills,
   getBillById,
+  getInstallmentParentById,
   saveBills,
   addBill,
+  addInstallmentBills,
+  cancelInstallment,
+  updateInstallmentBills,
   updateBill,
   deleteBill,
   queryBills,

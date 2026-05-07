@@ -150,6 +150,145 @@
   text-align: right;
 }
 
+/* 分摊区域 */
+.installment-section {
+  margin: 0 24rpx 24rpx;
+  padding: 0;
+  overflow: hidden;
+}
+
+.installment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+}
+
+.installment-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.title-text {
+  font-size: 30rpx;
+  color: #333333;
+}
+
+.title-desc {
+  font-size: 24rpx;
+  color: #999999;
+  margin-top: 4rpx;
+}
+
+.installment-switch {
+  width: 80rpx;
+  height: 48rpx;
+  background-color: #E5E5E5;
+  border-radius: 24rpx;
+  padding: 4rpx;
+  transition: all 0.3s;
+}
+
+.installment-switch.active {
+  background-color: #1677FF;
+}
+
+.switch-dot {
+  width: 40rpx;
+  height: 40rpx;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.installment-switch.active .switch-dot {
+  transform: translateX(32rpx);
+}
+
+.installment-content {
+  padding: 0 24rpx 24rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.installment-type {
+  display: flex;
+  margin-top: 24rpx;
+  background-color: #F5F5F5;
+  border-radius: 8rpx;
+  padding: 4rpx;
+}
+
+.type-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: #666666;
+  border-radius: 6rpx;
+}
+
+.type-item.active {
+  background-color: #FFFFFF;
+  color: #1677FF;
+  font-weight: 500;
+}
+
+.installment-range {
+  margin-top: 24rpx;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.range-row:last-child {
+  border-bottom: none;
+}
+
+.range-label {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.range-value {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.installment-preview {
+  margin-top: 24rpx;
+  background-color: #F8F9FA;
+  border-radius: 12rpx;
+  padding: 20rpx;
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.preview-label {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.preview-value {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.preview-value.highlight {
+  color: #1677FF;
+  font-weight: 600;
+}
+
 /* 错误提示 */
 .error-text {
   display: block;
@@ -190,4 +329,11 @@
 
 .btn-delete:active {
   background-color: #FFF1F0;
+}
+
+/* 公共样式 */
+.card {
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
 }
