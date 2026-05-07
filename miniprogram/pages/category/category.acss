@@ -1,0 +1,344 @@
+.page {
+  min-height: 100vh;
+  background-color: #F5F5F5;
+  padding-bottom: 120rpx;
+}
+
+/* Tab切换 */
+.tab-bar {
+  display: flex;
+  background-color: #FFFFFF;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 28rpx 0;
+  font-size: 30rpx;
+  color: #999999;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #1677FF;
+  font-weight: 500;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 6rpx;
+  background-color: #1677FF;
+  border-radius: 3rpx;
+}
+
+/* 分类列表 */
+.category-list {
+  margin: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+  border-bottom: 1rpx solid #F5F5F5;
+}
+
+.category-item:last-child {
+  border-bottom: none;
+}
+
+.item-left {
+  display: flex;
+  align-items: center;
+}
+
+.item-icon {
+  width: 64rpx;
+  height: 64rpx;
+  background-color: #F5F5F5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.item-name {
+  font-size: 30rpx;
+  color: #333333;
+}
+
+.item-tag {
+  font-size: 20rpx;
+  color: #1677FF;
+  background-color: #E8F4FF;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+  margin-left: 12rpx;
+}
+
+.item-actions {
+  display: flex;
+}
+
+.action-btn {
+  font-size: 26rpx;
+  color: #1677FF;
+  padding: 8rpx 16rpx;
+  margin-left: 16rpx;
+}
+
+.action-btn.danger {
+  color: #FF4D4F;
+}
+
+/* 添加按钮 */
+.add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 24rpx;
+  padding: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  border: 2rpx dashed #1677FF;
+  color: #1677FF;
+  font-size: 30rpx;
+}
+
+.add-icon {
+  font-size: 40rpx;
+  margin-right: 8rpx;
+}
+
+/* 设置入口 */
+.settings-entry {
+  display: flex;
+  align-items: center;
+  margin: 24rpx;
+  padding: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+}
+
+.entry-icon {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.entry-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333333;
+}
+
+.entry-arrow {
+  font-size: 32rpx;
+  color: #CCCCCC;
+}
+
+/* 弹窗遮罩 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+/* 弹窗内容 */
+.modal-content {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #FFFFFF;
+  border-radius: 24rpx 24rpx 0 0;
+  z-index: 101;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+}
+
+.modal-content.show {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333333;
+}
+
+.modal-close {
+  font-size: 48rpx;
+  color: #999999;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 32rpx;
+}
+
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 16rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background-color: #F5F5F5;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+}
+
+.emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -8rpx;
+}
+
+.emoji-item {
+  width: calc(20% - 16rpx);
+  margin: 8rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  background-color: #F5F5F5;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+}
+
+.emoji-item.selected {
+  background-color: #E8F4FF;
+  border-color: #1677FF;
+}
+
+.modal-footer {
+  display: flex;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.btn-cancel {
+  flex: 1;
+  height: 80rpx;
+  background-color: #F5F5F5;
+  color: #666666;
+  font-size: 30rpx;
+  border-radius: 40rpx;
+  border: none;
+  margin-right: 24rpx;
+}
+
+.btn-confirm {
+  flex: 1;
+  height: 80rpx;
+  background-color: #1677FF;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  border-radius: 40rpx;
+  border: none;
+}
+
+.btn-danger {
+  flex: 1;
+  height: 80rpx;
+  background-color: #FF4D4F;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  border-radius: 40rpx;
+  border: none;
+}
+
+/* 确认弹窗 */
+.confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 560rpx;
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  z-index: 101;
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.confirm-modal.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.confirm-title {
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  padding: 32rpx;
+}
+
+.confirm-content {
+  text-align: center;
+  font-size: 28rpx;
+  color: #666666;
+  padding: 0 32rpx 32rpx;
+}
+
+.confirm-actions {
+  display: flex;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.confirm-actions button {
+  flex: 1;
+  height: 96rpx;
+  line-height: 96rpx;
+  font-size: 30rpx;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+.confirm-actions button::after {
+  border: none;
+}
+
+.confirm-actions .btn-cancel {
+  color: #666666;
+  margin: 0;
+  background-color: transparent;
+}
+
+.confirm-actions .btn-danger {
+  color: #FF4D4F;
+  background-color: transparent;
+}

@@ -1,0 +1,88 @@
+<view class="page">
+  <!-- 类型切换 -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{type === 'expense' ? 'active' : ''}}"
+      data-type="expense"
+      onTap="onTypeChange"
+    >
+      支出
+    </view>
+    <view
+      class="tab-item {{type === 'income' ? 'active' : ''}}"
+      data-type="income"
+      onTap="onTypeChange"
+    >
+      收入
+    </view>
+  </view>
+
+  <!-- 金额输入 -->
+  <view class="amount-section">
+    <view class="amount-label">
+      <text class="amount-symbol">¥</text>
+      <text class="amount-value">{{amount || '0.00'}}</text>
+    </view>
+    <input
+      class="amount-input"
+      type="digit"
+      placeholder="请输入金额"
+      value="{{amount}}"
+      onInput="onAmountInput"
+    />
+    <text class="error-text" a:if="{{errors.amount}}">{{errors.amount}}</text>
+  </view>
+
+  <!-- 分类选择 -->
+  <view class="category-section card">
+    <view class="section-title">选择分类</view>
+    <view class="category-grid">
+      <view
+        class="category-item {{selectedCategoryId === item.id ? 'selected' : ''}}"
+        a:for="{{categories}}"
+        a:key="id"
+        data-id="{{item.id}}"
+        onTap="onCategorySelect"
+      >
+        <view class="category-icon">{{item.icon}}</view>
+        <view class="category-name">{{item.name}}</view>
+      </view>
+    </view>
+    <text class="error-text" a:if="{{errors.category}}">{{errors.category}}</text>
+  </view>
+
+  <!-- 日期和备注 -->
+  <view class="form-section card">
+    <view class="form-row">
+      <view class="form-label">日期</view>
+      <picker
+        mode="date"
+        value="{{date}}"
+        max="{{maxDate}}"
+        onChange="onDateChange"
+      >
+        <view class="form-value">{{date}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <view class="form-label">备注</view>
+      <input
+        class="form-input"
+        placeholder="添加备注（可选）"
+        value="{{note}}"
+        onInput="onNoteInput"
+        maxlength="100"
+      />
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="button-section">
+    <button class="btn-save" onTap="onSave">
+      {{isEdit ? '保存修改' : '保存'}}
+    </button>
+    <button class="btn-delete" a:if="{{isEdit}}" onTap="onDelete">
+      删除账单
+    </button>
+  </view>
+</view>

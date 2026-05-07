@@ -1,0 +1,145 @@
+<view class="page">
+  <!-- 类型切换 -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{type === 'expense' ? 'active' : ''}}"
+      data-type="expense"
+      onTap="onTypeChange"
+    >
+      支出分类
+    </view>
+    <view
+      class="tab-item {{type === 'income' ? 'active' : ''}}"
+      data-type="income"
+      onTap="onTypeChange"
+    >
+      收入分类
+    </view>
+  </view>
+
+  <!-- 分类列表 -->
+  <view class="category-list">
+    <view
+      class="category-item"
+      a:for="{{categories}}"
+      a:key="id"
+    >
+      <view class="item-left">
+        <view class="item-icon">{{item.icon}}</view>
+        <view class="item-name">{{item.name}}</view>
+        <view class="item-tag" a:if="{{item.isDefault}}">默认</view>
+      </view>
+      <view class="item-actions">
+        <view
+          class="action-btn"
+          data-category="{{item}}"
+          onTap="onShowEditModal"
+        >编辑</view>
+        <view
+          class="action-btn danger"
+          a:if="{{!item.isDefault}}"
+          data-category="{{item}}"
+          onTap="onShowDeleteConfirm"
+        >删除</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-btn" onTap="onShowAddModal">
+    <text class="add-icon">+</text>
+    <text>添加分类</text>
+  </view>
+
+  <!-- 设置入口 -->
+  <view class="settings-entry" onTap="goToSettings">
+    <text class="entry-icon">⚙️</text>
+    <text class="entry-text">设置</text>
+    <text class="entry-arrow">›</text>
+  </view>
+
+  <!-- 添加弹窗 -->
+  <view class="modal-mask" a:if="{{showAddModal}}" onTap="onCloseAddModal"></view>
+  <view class="modal-content {{showAddModal ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">添加分类</text>
+      <text class="modal-close" onTap="onCloseAddModal">×</text>
+    </view>
+    <view class="modal-body">
+      <view class="form-item">
+        <view class="form-label">分类名称</view>
+        <input
+          class="form-input"
+          placeholder="请输入分类名称"
+          value="{{formData.name}}"
+          onInput="onNameInput"
+          maxlength="10"
+        />
+      </view>
+      <view class="form-item">
+        <view class="form-label">选择图标</view>
+        <view class="emoji-grid">
+          <view
+            class="emoji-item {{formData.icon === item ? 'selected' : ''}}"
+            a:for="{{emojiList}}"
+            a:key="*this"
+            data-emoji="{{item}}"
+            onTap="onEmojiSelect"
+          >{{item}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn-cancel" onTap="onCloseAddModal">取消</button>
+      <button class="btn-confirm" onTap="onSaveCategory">保存</button>
+    </view>
+  </view>
+
+  <!-- 编辑弹窗 -->
+  <view class="modal-mask" a:if="{{showEditModal}}" onTap="onCloseEditModal"></view>
+  <view class="modal-content {{showEditModal ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">编辑分类</text>
+      <text class="modal-close" onTap="onCloseEditModal">×</text>
+    </view>
+    <view class="modal-body">
+      <view class="form-item">
+        <view class="form-label">分类名称</view>
+        <input
+          class="form-input"
+          placeholder="请输入分类名称"
+          value="{{formData.name}}"
+          onInput="onNameInput"
+          maxlength="10"
+        />
+      </view>
+      <view class="form-item">
+        <view class="form-label">选择图标</view>
+        <view class="emoji-grid">
+          <view
+            class="emoji-item {{formData.icon === item ? 'selected' : ''}}"
+            a:for="{{emojiList}}"
+            a:key="*this"
+            data-emoji="{{item}}"
+            onTap="onEmojiSelect"
+          >{{item}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn-cancel" onTap="onCloseEditModal">取消</button>
+      <button class="btn-confirm" onTap="onSaveEdit">保存</button>
+    </view>
+  </view>
+
+  <!-- 删除确认弹窗 -->
+  <view class="modal-mask" a:if="{{showDeleteConfirm}}" onTap="onCloseDeleteConfirm"></view>
+  <view class="confirm-modal {{showDeleteConfirm ? 'show' : ''}}">
+    <view class="confirm-title">确认删除</view>
+    <view class="confirm-content">确定要删除这个分类吗？删除后无法恢复。</view>
+    <view class="confirm-actions">
+      <button class="btn-cancel" onTap="onCloseDeleteConfirm">取消</button>
+      <button class="btn-danger" onTap="onConfirmDelete">删除</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,6 @@
+{
+  "defaultTitle": "统计",
+  "usingComponents": {
+    "chart-bar": "/components/chart-bar/chart-bar"
+  }
+}

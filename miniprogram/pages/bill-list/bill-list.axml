@@ -1,0 +1,123 @@
+<import-sjs from="../../utils/format.sjs" name="format" />
+
+<view class="page">
+  <!-- 汇总卡片 -->
+  <view class="summary-card">
+    <view class="summary-header">
+      <view class="date-nav">
+        <view class="nav-btn" data-direction="-1" onTap="onDateNavigate">
+          <text class="nav-icon">‹</text>
+        </view>
+        <view class="date-text" onTap="onDateTypeTap">{{dateRangeText}}</view>
+        <view class="nav-btn" data-direction="1" onTap="onDateNavigate">
+          <text class="nav-icon">›</text>
+        </view>
+      </view>
+    </view>
+    <view class="summary-body">
+      <view class="summary-item">
+        <view class="summary-label">收入</view>
+        <view class="summary-value income">{{format.formatAmount(stats.totalIncome)}}</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <view class="summary-label">支出</view>
+        <view class="summary-value expense">{{format.formatAmount(stats.totalExpense)}}</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <view class="summary-label">结余</view>
+        <view class="summary-value">{{format.formatAmount(stats.balance)}}</view>
+      </view>
+    </view>
+    <!-- 分类筛选 -->
+    <view class="filter-bar" onTap="onCategoryFilterTap">
+      <text class="filter-label">{{selectedCategoryName || '全部分类'}}</text>
+      <text class="filter-arrow">▼</text>
+    </view>
+  </view>
+
+  <!-- 时间类型切换 -->
+  <view class="date-type-bar">
+    <view
+      class="type-item {{dateType === 'day' ? 'active' : ''}}"
+      data-type="day"
+      onTap="onDateTypeChange"
+    >日</view>
+    <view
+      class="type-item {{dateType === 'month' ? 'active' : ''}}"
+      data-type="month"
+      onTap="onDateTypeChange"
+    >月</view>
+    <view
+      class="type-item {{dateType === 'year' ? 'active' : ''}}"
+      data-type="year"
+      onTap="onDateTypeChange"
+    >年</view>
+  </view>
+
+  <!-- 账单列表 -->
+  <view class="bill-list" a:if="{{!isEmpty && !loading}}">
+    <view class="bill-group" a:for="{{billGroups}}" a:key="date">
+      <view class="group-header">
+        <view class="group-date">
+          <text class="date-text">{{item.displayDate}}</text>
+          <text class="week-text">{{item.weekDay}}</text>
+        </view>
+        <view class="group-stats">
+          <text class="expense" a:if="{{item.dayExpense > 0}}">-{{format.formatAmount(item.dayExpense)}}</text>
+          <text class="income" a:if="{{item.dayIncome > 0}}">+{{format.formatAmount(item.dayIncome)}}</text>
+        </view>
+      </view>
+      <view class="bill-items">
+        <view
+          class="bill-item"
+          a:for="{{item.bills}}"
+          a:key="id"
+          data-bill="{{item}}"
+          onTap="onBillTap"
+        >
+          <view class="bill-icon">{{item.categoryIcon}}</view>
+          <view class="bill-info">
+            <view class="bill-name">{{item.categoryName}}</view>
+            <view class="bill-note" a:if="{{item.note}}">{{item.note}}</view>
+          </view>
+          <view class="bill-amount {{item.type}}">
+            {{item.amountText}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" a:if="{{isEmpty && !loading}}">
+    <text class="empty-icon">📝</text>
+    <text class="empty-text">暂无账单记录</text>
+    <button class="empty-btn" onTap="onAddBill">记一笔</button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" a:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 分类筛选弹窗 -->
+  <view class="popup-mask" a:if="{{showCategoryFilter}}" onTap="onCategoryFilterClose"></view>
+  <view class="popup-content {{showCategoryFilter ? 'show' : ''}}">
+    <view class="popup-title">选择分类</view>
+    <view class="category-list">
+      <view
+        class="category-option {{selectedCategoryId === item.id ? 'selected' : ''}}"
+        a:for="{{categories}}"
+        a:key="id"
+        data-id="{{item.id}}"
+        onTap="onCategorySelect"
+      >
+        <text class="option-icon">{{item.icon}}</text>
+        <text class="option-name">{{item.name}}</text>
+        <text class="option-check" a:if="{{selectedCategoryId === item.id}}">✓</text>
+      </view>
+    </view>
+  </view>
+</view>

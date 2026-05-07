@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/bill-list/bill-list",
+    "pages/bill-add/bill-add",
+    "pages/statistics/statistics",
+    "pages/category/category",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "defaultTitle": "账单管理",
+    "titleBarColor": "#FFFFFF"
+  },
+  "tabBar": {
+    "textColor": "#999999",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#FFFFFF",
+    "items": [
+      {
+        "pagePath": "pages/bill-list/bill-list",
+        "name": "明细"
+      },
+      {
+        "pagePath": "pages/bill-add/bill-add",
+        "name": "记账"
+      },
+      {
+        "pagePath": "pages/statistics/statistics",
+        "name": "统计"
+      },
+      {
+        "pagePath": "pages/category/category",
+        "name": "分类"
+      }
+    ]
+  }
+}

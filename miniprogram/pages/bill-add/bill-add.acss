@@ -1,0 +1,193 @@
+.page {
+  min-height: 100vh;
+  background-color: #F5F5F5;
+}
+
+/* 类型切换Tab */
+.tab-bar {
+  display: flex;
+  background-color: #FFFFFF;
+  padding: 0 24rpx;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 28rpx 0;
+  font-size: 32rpx;
+  color: #999999;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #333333;
+  font-weight: 600;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 6rpx;
+  background-color: #1677FF;
+  border-radius: 3rpx;
+}
+
+/* 金额区域 */
+.amount-section {
+  background-color: #FFFFFF;
+  padding: 40rpx 24rpx;
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+.amount-label {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin-bottom: 20rpx;
+}
+
+.amount-symbol {
+  font-size: 48rpx;
+  color: #333333;
+  margin-right: 8rpx;
+}
+
+.amount-value {
+  font-size: 72rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.amount-input {
+  width: 100%;
+  height: 88rpx;
+  background-color: #F5F5F5;
+  border-radius: 12rpx;
+  text-align: center;
+  font-size: 32rpx;
+}
+
+/* 分类区域 */
+.category-section {
+  margin: 0 24rpx 24rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  color: #999999;
+  margin-bottom: 20rpx;
+}
+
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -8rpx;
+}
+
+.category-item {
+  width: calc(25% - 16rpx);
+  margin: 8rpx;
+  padding: 20rpx 0;
+  text-align: center;
+  background-color: #F5F5F5;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s;
+}
+
+.category-item.selected {
+  background-color: #E8F4FF;
+  border-color: #1677FF;
+}
+
+.category-icon {
+  font-size: 48rpx;
+  margin-bottom: 8rpx;
+}
+
+.category-name {
+  font-size: 24rpx;
+  color: #333333;
+}
+
+/* 表单区域 */
+.form-section {
+  margin: 0 24rpx 24rpx;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.form-row:last-child {
+  border-bottom: none;
+}
+
+.form-label {
+  width: 120rpx;
+  font-size: 30rpx;
+  color: #333333;
+}
+
+.form-value {
+  flex: 1;
+  font-size: 30rpx;
+  color: #666666;
+  text-align: right;
+}
+
+.form-input {
+  flex: 1;
+  font-size: 30rpx;
+  text-align: right;
+}
+
+/* 错误提示 */
+.error-text {
+  display: block;
+  font-size: 24rpx;
+  color: #FF4D4F;
+  margin-top: 12rpx;
+}
+
+/* 按钮区域 */
+.button-section {
+  padding: 40rpx 24rpx;
+}
+
+.btn-save {
+  width: 100%;
+  height: 88rpx;
+  background-color: #1677FF;
+  color: #FFFFFF;
+  font-size: 32rpx;
+  border-radius: 44rpx;
+  border: none;
+}
+
+.btn-save:active {
+  background-color: #0958D9;
+}
+
+.btn-delete {
+  width: 100%;
+  height: 88rpx;
+  background-color: #FFFFFF;
+  color: #FF4D4F;
+  font-size: 32rpx;
+  border-radius: 44rpx;
+  border: 2rpx solid #FF4D4F;
+  margin-top: 24rpx;
+}
+
+.btn-delete:active {
+  background-color: #FFF1F0;
+}

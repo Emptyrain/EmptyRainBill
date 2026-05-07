@@ -1,0 +1,17 @@
+<view class="chart-container">
+  <view class="chart-bars">
+    <view class="bar-group" a:for="{{data}}" a:key="label">
+      <view class="bar-wrapper" style="height: {{maxHeight}}rpx;">
+        <view
+          class="bar expense"
+          style="height: {{item.expense > 0 ? (item.expense / maxExpense * maxHeight) : 0}}rpx;"
+        ></view>
+        <view
+          class="bar income"
+          style="height: {{item.income > 0 ? (item.income / maxIncome * maxHeight) : 0}}rpx;"
+        ></view>
+      </view>
+      <view class="bar-label">{{item.label}}</view>
+    </view>
+  </view>
+</view>

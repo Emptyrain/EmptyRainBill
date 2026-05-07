@@ -1,0 +1,146 @@
+<import-sjs from="../../utils/format.sjs" name="format" />
+
+<view class="page">
+  <!-- 统计类型切换 -->
+  <view class="type-bar">
+    <view
+      class="type-item {{statsType === 'day' ? 'active' : ''}}"
+      data-type="day"
+      onTap="onStatsTypeChange"
+    >日</view>
+    <view
+      class="type-item {{statsType === 'week' ? 'active' : ''}}"
+      data-type="week"
+      onTap="onStatsTypeChange"
+    >周</view>
+    <view
+      class="type-item {{statsType === 'month' ? 'active' : ''}}"
+      data-type="month"
+      onTap="onStatsTypeChange"
+    >月</view>
+    <view
+      class="type-item {{statsType === 'category' ? 'active' : ''}}"
+      data-type="category"
+      onTap="onStatsTypeChange"
+    >分类</view>
+  </view>
+
+  <!-- 汇总卡片 -->
+  <view class="summary-card">
+    <view class="summary-row">
+      <view class="summary-item">
+        <view class="summary-label">收入</view>
+        <view class="summary-value income">{{format.formatAmount(stats.totalIncome)}}</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">支出</view>
+        <view class="summary-value expense">{{format.formatAmount(stats.totalExpense)}}</view>
+      </view>
+      <view class="summary-item">
+        <view class="summary-label">结余</view>
+        <view class="summary-value">{{format.formatAmount(stats.balance)}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 时间维度图表 -->
+  <view class="chart-section" a:if="{{statsType !== 'category' && !loading}}">
+    <view class="section-title">收支趋势</view>
+    <view class="chart-container">
+      <view class="chart-header">
+        <view class="legend">
+          <view class="legend-item">
+            <view class="legend-dot expense"></view>
+            <text>支出</text>
+          </view>
+          <view class="legend-item">
+            <view class="legend-dot income"></view>
+            <text>收入</text>
+          </view>
+        </view>
+      </view>
+      <view class="chart-body">
+        <view class="chart-bars">
+          <view class="bar-group" a:for="{{chartData}}" a:key="label">
+            <view class="bar-wrapper">
+              <view
+                class="bar expense"
+                style="height: {{item.expenseHeight}}rpx;"
+              ></view>
+              <view
+                class="bar income"
+                style="height: {{item.incomeHeight}}rpx;"
+              ></view>
+            </view>
+            <view class="bar-label">{{item.label}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类统计 -->
+  <view class="category-section" a:if="{{statsType === 'category' && !loading}}">
+    <!-- 收支切换 -->
+    <view class="mode-bar">
+      <view
+        class="mode-item {{statsMode === 'expense' ? 'active' : ''}}"
+        data-type="expense"
+        onTap="onStatsModeChange"
+      >支出</view>
+      <view
+        class="mode-item {{statsMode === 'income' ? 'active' : ''}}"
+        data-type="income"
+        onTap="onStatsModeChange"
+      >收入</view>
+    </view>
+
+    <!-- 分类列表 -->
+    <view class="category-list">
+      <view
+        class="category-item"
+        a:for="{{categoryStats}}"
+        a:key="categoryId"
+        data-id="{{item.categoryId}}"
+        onTap="onCategoryTap"
+      >
+        <view class="item-left">
+          <view class="item-icon">{{item.categoryIcon}}</view>
+          <view class="item-info">
+            <view class="item-name">{{item.categoryName}}</view>
+            <view class="item-count">{{item.count}}笔</view>
+          </view>
+        </view>
+        <view class="item-right">
+          <view class="item-amount">¥{{format.formatAmount(item.total)}}</view>
+          <view class="item-percent">{{item.percentage}}%</view>
+        </view>
+      </view>
+
+      <!-- 进度条 -->
+      <view class="progress-bars">
+        <view
+          class="progress-item"
+          a:for="{{categoryStats}}"
+          a:key="categoryId"
+        >
+          <view
+            class="progress-bar"
+            style="width: {{item.percentage}}%;"
+          ></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" a:if="{{categoryStats.length === 0}}">
+      <text class="empty-icon">📊</text>
+      <text class="empty-text">暂无{{statsMode === 'expense' ? '支出' : '收入'}}数据</text>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" a:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>
