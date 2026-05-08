@@ -4,7 +4,8 @@
     "pages/bill-add/bill-add",
     "pages/statistics/statistics",
     "pages/category/category",
-    "pages/settings/settings"
+    "pages/settings/settings",
+    "pages/csv-import/csv-import"
   ],
   "window": {
     "defaultTitle": "账单管理",

@@ -32,6 +32,13 @@
   <view class="section">
     <view class="section-title">数据管理</view>
     <view class="menu-list">
+      <view class="menu-item" onTap="onImportCSV">
+        <view class="menu-left">
+          <text class="menu-icon">📥</text>
+          <text class="menu-text">CSV导入</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
       <view class="menu-item" onTap="onExportData">
         <view class="menu-left">
           <text class="menu-icon">📤</text>

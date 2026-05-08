@@ -1,9 +1,16 @@
 {
   "format": 2,
   "compileOptions": {
-    "component2": true,
-    "enableNodeModuleBabelTransform": true
+    "component2": true
   },
   "miniprogramRoot": "./miniprogram",
-  "cloudbaseRoot": "cloud"
+  "cloudbaseRoot": "cloud",
+  "uploadExclude": [
+    "file/*",
+    "README.md",
+    "CLAUDE.md",
+    ".gitignore",
+    ".git",
+    ".DS_Store"
+  ]
 }

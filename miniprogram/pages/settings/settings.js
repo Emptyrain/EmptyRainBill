@@ -110,6 +110,13 @@ Page({
     });
   },
 
+  // CSV导入
+  onImportCSV() {
+    my.navigateTo({
+      url: '/pages/csv-import/csv-import'
+    });
+  },
+
   // 上传数据到云端
   async onUpload() {
     my.showLoading({ content: '上传中...' });
