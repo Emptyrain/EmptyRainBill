@@ -3,5 +3,7 @@
   "version": "1.0.0",
   "description": "CSV导入云函数",
   "main": "index.js",
-  "dependencies": {}
+  "dependencies": {
+    "iconv-lite": "^0.7.2"
+  }
 }

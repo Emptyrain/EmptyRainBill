@@ -19,10 +19,11 @@
 
   <!-- 步骤1：选择文件 -->
   <view class="step-content" a:if="{{currentStep === 1}}">
-    <view class="upload-area" onTap="chooseFile">
+    <view class="upload-area">
       <view class="upload-icon">📁</view>
-      <text class="upload-text">点击选择CSV文件</text>
-      <text class="upload-hint">支持支付宝账单导出的CSV格式</text>
+      <text class="upload-text">点击下方按钮选择CSV文件</text>
+      <text class="upload-hint">从手机文件管理器中选择</text>
+      <button class="choose-btn" onTap="chooseFile">选择CSV文件</button>
     </view>
 
     <view class="file-info" a:if="{{fileName}}">
@@ -34,7 +35,7 @@
       <view class="help-title">支持的CSV格式</view>
       <view class="help-content">
         <text>支付宝账单导出格式：</text>
-        <text class="help-example">记录时间,分类,收支类型,金额,备注,账户,来源,标签</text>
+        <text class="help-example">记录时间,分类,收支类型,金额,备注</text>
       </view>
     </view>
   </view>

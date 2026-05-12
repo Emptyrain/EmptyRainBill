@@ -84,6 +84,15 @@
   color: #999;
 }
 
+.choose-btn {
+  background: #1677ff;
+  color: #fff;
+  font-size: 32rpx;
+  padding: 24rpx 0;
+  border-radius: 12rpx;
+  margin: 30rpx 0;
+}
+
 /* 文件信息 */
 .file-info {
   background: #fff;

@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "WebFetch(domain:opendocs.alipay.com)"
+      "WebFetch(domain:opendocs.alipay.com)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(ls *)"
     ]
   }
 }

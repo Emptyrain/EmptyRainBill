@@ -2,40 +2,54 @@
 
 /**
  * CSV导入云函数
- * 支持解析支付宝导出的账单CSV文件并批量导入
+ * 接收base64编码的CSV文件，自动检测GBK/UTF-8编码并解析
+ * 一次性返回：全部分类（供映射）+ 全部已转换账单
  */
+
+/**
+ * 检测并解码文本编码
+ */
+function decodeCSVContent(buffer) {
+  var utf8Text = buffer.toString('utf8');
+
+  if (utf8Text.indexOf('') === -1 && /[一-龥]/.test(utf8Text)) {
+    return utf8Text;
+  }
+
+  try {
+    var iconv = require('iconv-lite');
+    return iconv.decode(buffer, 'gbk');
+  } catch (e) {
+    return utf8Text;
+  }
+}
 
 /**
  * 解析CSV文本为对象数组
  */
 function parseCSV(csvText) {
-  const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+  var lines = csvText.split(/\r?\n/).filter(function(line) { return line.trim(); });
 
-  if (lines.length < 2) {
-    return [];
-  }
+  if (lines.length < 2) return [];
 
-  // 找到标题行（以"记录时间"开头）
-  let headerIndex = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith('记录时间')) {
+  var headerIndex = -1;
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf('记录时间') === 0) {
       headerIndex = i;
       break;
     }
   }
 
-  if (headerIndex === -1) {
-    return [];
-  }
+  if (headerIndex === -1) headerIndex = 0;
 
-  const headers = parseCSVLine(lines[headerIndex]);
-  const result = [];
+  var headers = parseCSVLine(lines[headerIndex]);
+  var result = [];
 
-  for (let i = headerIndex + 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
+  for (var i = headerIndex + 1; i < lines.length; i++) {
+    var values = parseCSVLine(lines[i]);
     if (values.length >= headers.length) {
-      const obj = {};
-      headers.forEach((header, index) => {
+      var obj = {};
+      headers.forEach(function(header, index) {
         obj[header.trim()] = values[index] ? values[index].trim() : '';
       });
       result.push(obj);
@@ -49,13 +63,12 @@ function parseCSV(csvText) {
  * 解析CSV行
  */
 function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
+  var result = [];
+  var current = '';
+  var inQuotes = false;
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
+  for (var i = 0; i < line.length; i++) {
+    var char = line[i];
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
@@ -66,132 +79,131 @@ function parseCSVLine(line) {
     }
   }
   result.push(current);
-
   return result;
-}
-
-/**
- * 将CSV记录转换为账单格式
- */
-function convertToBill(record, categoryMapping, defaultCategories) {
-  // 解析日期时间
-  const datetime = record['记录时间'] || '';
-  const dateMatch = datetime.match(/^(\d{4}-\d{2}-\d{2})/);
-  const date = dateMatch ? dateMatch[1] : datetime.substring(0, 10);
-
-  // 确定类型
-  const typeText = record['收支类型'] || '';
-  let type = 'expense';
-  if (typeText.includes('收入') || typeText === '不计收支') {
-    type = 'income';
-  } else if (typeText.includes('退款')) {
-    type = 'income';
-  }
-
-  // 解析金额（元转分）
-  const amountStr = record['金额'] || '0';
-  const amountYuan = parseFloat(amountStr.replace(/[^\d.]/g, ''));
-  const amountFen = Math.round(amountYuan * 100);
-
-  // 映射分类
-  const csvCategory = record['分类'] || '';
-  let categoryId = categoryMapping[csvCategory];
-
-  if (!categoryId) {
-    // 使用默认分类
-    const defaultCat = defaultCategories.find(c => c.type === type);
-    categoryId = defaultCat ? defaultCat.id : '';
-  }
-
-  // 构建备注
-  const note = record['备注'] || '';
-  const account = record['账户'] || '';
-  const fullNote = note + (account ? ` (${account})` : '');
-
-  return {
-    id: generateId(),
-    date,
-    type,
-    amount: amountFen,
-    categoryId,
-    note: fullNote,
-    syncStatus: 'synced',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    source: 'csv_import'
-  };
 }
 
 /**
  * 生成唯一ID
  */
 function generateId() {
-  const timestamp = Date.now();
-  const randomStr = Math.random().toString(36).substring(2, 12);
-  return `bill_${timestamp}_${randomStr}`;
+  var timestamp = Date.now();
+  var randomStr = Math.random().toString(36).substring(2, 12);
+  return 'bill_' + timestamp + '_' + randomStr;
 }
 
 /**
- * 获取CSV中的所有分类
+ * 将CSV记录转换为账单格式
+ */
+function convertToBill(record, categoryMapping, defaultCategories) {
+  var datetime = record['记录时间'] || '';
+  var dateMatch = datetime.match(/^(\d{4}-\d{2}-\d{2})/);
+  var date = dateMatch ? dateMatch[1] : datetime.substring(0, 10);
+
+  var typeText = record['收支类型'] || '';
+  var type = 'expense';
+  if (typeText.indexOf('收入') !== -1 || typeText === '不计收支') {
+    type = 'income';
+  } else if (typeText.indexOf('退款') !== -1) {
+    type = 'income';
+  }
+
+  var amountStr = record['金额'] || '0';
+  var cleanAmount = amountStr.replace(/[,\s]/g, '');
+  var amountYuan = parseFloat(cleanAmount) || 0;
+  var amountFen = Math.round(amountYuan * 100);
+
+  var csvCategory = record['分类'] || '';
+  var categoryId = categoryMapping[csvCategory];
+
+  if (!categoryId) {
+    for (var i = 0; i < defaultCategories.length; i++) {
+      if (defaultCategories[i].type === type) {
+        categoryId = defaultCategories[i].id;
+        break;
+      }
+    }
+  }
+
+  var note = record['备注'] || '';
+  var account = record['账户'] || '';
+  var fullNote = note + (account ? ' (' + account + ')' : '');
+
+  return {
+    id: generateId(),
+    date: date,
+    type: type,
+    amount: amountFen,
+    categoryId: categoryId,
+    note: fullNote,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    source: 'csv_import',
+    _csvCategory: csvCategory
+  };
+}
+
+/**
+ * 提取CSV中的分类
  */
 function extractCategories(records) {
-  const categoryMap = {};
+  var categoryMap = {};
 
-  records.forEach(record => {
-    const category = record['分类'] || '其他';
+  records.forEach(function(record) {
+    var category = record['分类'] || '其他';
     if (!categoryMap[category]) {
       categoryMap[category] = 0;
     }
     categoryMap[category]++;
   });
 
-  return Object.entries(categoryMap)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
+  return Object.keys(categoryMap)
+    .map(function(name) {
+      return { name: name, count: categoryMap[name] };
+    })
+    .sort(function(a, b) { return b.count - a.count; });
 }
 
 /**
- * 生成默认分类映射
+ * 智能分类映射
  */
-function generateDefaultMapping(csvCategories, systemCategories) {
-  const mapping = {};
+function autoMapCategories(csvCategories, systemCategories) {
+  var mapping = {};
 
-  csvCategories.forEach(csvCat => {
-    const csvName = csvCat.name;
+  var keywordMap = {
+    '餐饮': ['餐', '食品', '外卖', '吃饭'],
+    '交通': ['交通', '出行', '打车', '公交', '地铁'],
+    '购物': ['购', '电商', '网购', '生活日用'],
+    '娱乐': ['娱乐', '游戏', '休闲'],
+    '居住': ['住房', '房租', '水电', '物业', '住'],
+    '通讯': ['通讯', '话费', '流量', '网络'],
+    '医疗': ['医疗', '药', '医院', '健康'],
+    '教育': ['教育', '学习', '培训', '书籍'],
+    '工资': ['工资', '薪资', '薪水'],
+    '奖金': ['奖金', '奖励', '绩效'],
+    '理财': ['理财', '投资', '收益', '利息'],
+    '兼职': ['兼职', '外快', '副业']
+  };
 
-    // 尝试匹配系统分类
-    const matched = systemCategories.find(sysCat => {
-      const sysName = sysCat.name.toLowerCase();
-      const csvNameLower = csvName.toLowerCase();
+  csvCategories.forEach(function(csvCat) {
+    var csvName = csvCat.name;
+    var csvNameLower = csvName.toLowerCase();
 
-      // 完全匹配
-      if (sysName === csvNameLower) return true;
+    for (var i = 0; i < systemCategories.length; i++) {
+      if (systemCategories[i].name === csvName) {
+        mapping[csvName] = systemCategories[i].id;
+        return;
+      }
+    }
 
-      // 包含匹配
-      if (sysName.includes(csvNameLower) || csvNameLower.includes(sysName)) return true;
-
-      // 关键词匹配
-      const keywordMap = {
-        '餐饮': ['餐', '食品', '外卖', '吃饭'],
-        '交通': ['交通', '出行', '打车', '公交', '地铁'],
-        '购物': ['购', '电商', '网购'],
-        '娱乐': ['娱乐', '游戏', '休闲'],
-        '居住': ['住房', '房租', '水电', '物业'],
-        '通讯': ['通讯', '话费', '流量', '网络'],
-        '医疗': ['医疗', '药', '医院', '健康'],
-        '教育': ['教育', '学习', '培训', '书籍'],
-        '工资': ['工资', '薪资', '薪水'],
-        '奖金': ['奖金', '奖励', '绩效'],
-        '理财': ['理财', '投资', '收益', '利息'],
-        '兼职': ['兼职', '外快', '副业']
-      };
-
-      const keywords = keywordMap[sysCat.name] || [];
-      return keywords.some(k => csvNameLower.includes(k));
-    });
-
-    if (matched) {
-      mapping[csvName] = matched.id;
+    for (var i = 0; i < systemCategories.length; i++) {
+      var sysCat = systemCategories[i];
+      var keywords = keywordMap[sysCat.name] || [];
+      for (var j = 0; j < keywords.length; j++) {
+        if (csvNameLower.indexOf(keywords[j]) !== -1) {
+          mapping[csvName] = sysCat.id;
+          return;
+        }
+      }
     }
   });
 
@@ -199,18 +211,46 @@ function generateDefaultMapping(csvCategories, systemCategories) {
 }
 
 /**
+ * 系统默认分类
+ */
+function getSystemCategoriesList() {
+  return [
+    { id: 'cat_exp_1', name: '餐饮', type: 'expense' },
+    { id: 'cat_exp_2', name: '交通', type: 'expense' },
+    { id: 'cat_exp_3', name: '购物', type: 'expense' },
+    { id: 'cat_exp_4', name: '娱乐', type: 'expense' },
+    { id: 'cat_exp_5', name: '居住', type: 'expense' },
+    { id: 'cat_exp_6', name: '通讯', type: 'expense' },
+    { id: 'cat_exp_7', name: '医疗', type: 'expense' },
+    { id: 'cat_exp_8', name: '教育', type: 'expense' },
+    { id: 'cat_exp_9', name: '其他', type: 'expense' },
+    { id: 'cat_inc_1', name: '工资', type: 'income' },
+    { id: 'cat_inc_2', name: '奖金', type: 'income' },
+    { id: 'cat_inc_3', name: '理财', type: 'income' },
+    { id: 'cat_inc_4', name: '兼职', type: 'income' },
+    { id: 'cat_inc_5', name: '其他', type: 'income' }
+  ];
+}
+
+/**
+ * 将账单按分类映射重新转换
+ */
+function convertAllBills(records, categoryMapping, systemCategories) {
+  return records.map(function(record) {
+    return convertToBill(record, categoryMapping, systemCategories);
+  });
+}
+
+/**
  * 云函数入口
  */
-exports.main = async (event, context) => {
-  const { action, data } = event;
+exports.main = async function(event, context) {
+  var action = event.action;
+  var data = event.data;
 
   switch (action) {
     case 'parse':
       return await parseCSVFile(data);
-    case 'import':
-      return await importBills(data);
-    case 'getCategories':
-      return await getSystemCategories();
     default:
       return { success: false, message: '未知操作' };
   }
@@ -218,108 +258,38 @@ exports.main = async (event, context) => {
 
 /**
  * 解析CSV文件
+ * 输入: base64
+ * 输出: 分类列表(供用户映射) + 默认映射下的全部账单
  */
 async function parseCSVFile(data) {
-  const { csvContent } = data;
+  var fileBase64 = data.fileBase64;
 
   try {
-    const records = parseCSV(csvContent);
+    var buffer = Buffer.from(fileBase64, 'base64');
+    var csvText = decodeCSVContent(buffer);
+    var records = parseCSV(csvText);
 
     if (records.length === 0) {
-      return {
-        success: false,
-        message: 'CSV文件格式错误或没有有效数据'
-      };
+      return { success: false, message: 'CSV文件格式错误或没有有效数据' };
     }
 
-    // 提取分类
-    const categories = extractCategories(records);
+    var categories = extractCategories(records);
+    var systemCategories = getSystemCategoriesList();
+    var defaultMapping = autoMapCategories(categories, systemCategories);
+
+    // 用默认映射转换全部账单
+    var bills = convertAllBills(records, defaultMapping, systemCategories);
 
     return {
       success: true,
       data: {
         total: records.length,
-        categories,
-        preview: records.slice(0, 10) // 返回前10条预览
+        categories: categories,
+        defaultMapping: defaultMapping,
+        bills: bills
       }
     };
   } catch (err) {
-    return {
-      success: false,
-      message: '解析CSV文件失败: ' + err.message
-    };
+    return { success: false, message: '解析CSV文件失败: ' + err.message };
   }
-}
-
-/**
- * 导入账单
- */
-async function importBills(data) {
-  const { csvContent, categoryMapping, defaultCategories, userId } = data;
-
-  try {
-    const records = parseCSV(csvContent);
-
-    if (records.length === 0) {
-      return {
-        success: false,
-        message: '没有有效的账单数据'
-      };
-    }
-
-    // 转换为账单格式
-    const bills = records.map(record =>
-      convertToBill(record, categoryMapping || {}, defaultCategories || [])
-    );
-
-    // 这里应该保存到数据库
-    // 由于是云函数，需要连接云数据库
-    // 暂时返回转换后的数据，由前端保存到本地存储
-    // 后续可以扩展为保存到云数据库
-
-    return {
-      success: true,
-      data: {
-        imported: bills.length,
-        bills
-      }
-    };
-  } catch (err) {
-    return {
-      success: false,
-      message: '导入账单失败: ' + err.message
-    };
-  }
-}
-
-/**
- * 获取系统分类
- */
-async function getSystemCategories() {
-  // 返回系统默认分类
-  const categories = {
-    expense: [
-      { id: 'cat_exp_1', name: '餐饮', icon: '🍚', type: 'expense' },
-      { id: 'cat_exp_2', name: '交通', icon: '🚗', type: 'expense' },
-      { id: 'cat_exp_3', name: '购物', icon: '🛒', type: 'expense' },
-      { id: 'cat_exp_4', name: '娱乐', icon: '🎮', type: 'expense' },
-      { id: 'cat_exp_5', name: '居住', icon: '🏠', type: 'expense' },
-      { id: 'cat_exp_6', name: '通讯', icon: '📱', type: 'expense' },
-      { id: 'cat_exp_7', name: '医疗', icon: '💊', type: 'expense' },
-      { id: 'cat_exp_8', name: '教育', icon: '📚', type: 'expense' },
-      { id: 'cat_exp_9', name: '其他', icon: '💰', type: 'expense' }
-    ],
-    income: [
-      { id: 'cat_inc_1', name: '工资', icon: '💵', type: 'income' },
-      { id: 'cat_inc_2', name: '奖金', icon: '🎁', type: 'income' },
-      { id: 'cat_inc_3', name: '理财', icon: '📈', type: 'income' },
-      { id: 'cat_inc_4', name: '兼职', icon: '💼', type: 'income' },
-      { id: 'cat_inc_5', name: '其他', icon: '💰', type: 'income' }
-    ]
-  };
-
-  return {
-    success: true,
-    data: categories
-  };
 }

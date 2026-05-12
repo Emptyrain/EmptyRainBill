@@ -11,6 +11,10 @@
     "CLAUDE.md",
     ".gitignore",
     ".git",
-    ".DS_Store"
+    ".DS_Store",
+    "index.example.json",
+    "chooseFileFromDisk.md",
+    ".claude",
+    "cloud"
   ]
 }
