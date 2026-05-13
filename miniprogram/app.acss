@@ -53,7 +53,7 @@ page {
   background-color: #1677FF;
   color: #FFFFFF;
   border-radius: 8rpx;
-  padding: 20rpx 40rpx;
+  padding: 0rpx 40rpx;
   font-size: 32rpx;
   text-align: center;
 }

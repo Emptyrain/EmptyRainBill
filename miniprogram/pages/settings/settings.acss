@@ -65,7 +65,7 @@
 
 .sync-badge {
   position: absolute;
-  top: -10rpx;
+  top: 0rpx;
   right: -10rpx;
   min-width: 36rpx;
   height: 36rpx;
